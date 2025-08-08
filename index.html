@@ -1,99 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Formulario de Gestión</title>
+<style>
+  :root{ --radius:15px; }
+  *{ box-sizing:border-box }
+  body{ margin:0; font-family: Arial, sans-serif; background:#f7f8fa; color:#333; }
+  .container{ max-width:900px; margin:0 auto; padding:20px 16px 96px; }
+  h1{ font-size:clamp(20px,2.6vw,28px); color:#444; margin:8px 0 6px }
+  h2{ display:flex; align-items:center; gap:10px; font-size:clamp(16px,2.2vw,20px); color:#444; margin:0 0 8px; }
+  .meta{margin:6px 2px 12px; font-size:14px}
+  .card{ background:#fff; border-radius:var(--radius); box-shadow:0 2px 10px rgba(0,0,0,.08); padding:16px; margin-top:14px; }
+  .row{ display:flex; gap:14px; flex-direction:column; }
+  textarea{ width:100%; border:1px solid #ddd; border-radius:10px; padding:10px; resize:vertical; font-size:14px; min-height:100px; }
+  .btn-wrap{ position:fixed; left:0; right:0; bottom:0; padding:12px 16px; background:linear-gradient(180deg, rgba(247,248,250,0) 0%, #f7f8fa 30%); }
+  .btn{ width:100%; background:#f5b700; color:#000; padding:14px 18px; border:none; border-radius:12px; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; }
+  .btn:hover{ background:#e0a900; }
+  @media (min-width:900px){
+    .container{ padding-bottom: 32px; }
+    .btn-wrap{ position:static; background:transparent; padding:0; }
+    .row{ flex-direction:row; }
+    .row > .field{ flex:1; }
+    textarea{ min-height:160px; }
+    .actions{ display:flex; justify-content:flex-end; }
+    .btn{ width:auto; min-width:220px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>➤ Formulario de Gestión</h1>
+    <p class="meta"><strong>⏰ FECHA:</strong> <span id="fechaActual"></span></p>
+
+    <div class="card">
+      <h2>ℹ️ Informativo</h2>
+      <textarea id="informativo">1.- 
+2.- 
+3.- </textarea>
+    </div>
+
+    <div class="card">
+      <h2>✍️ Decisión</h2>
+      <div class="row">
+        <div class="field">
+          <textarea id="decision" placeholder="Analiza los aspectos relevantes para la decisión..."></textarea>
+        </div>
+        <div class="field">
+          <textarea id="decisionTomar" placeholder="Especifica la decisión final..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-wrap actions">
+      <a id="btnEnviar" class="btn" target="_blank">✉️ Enviar</a>
+    </div>
+  </div>
+
 <script>
-  // --- Detección básica ---
-  const ua = navigator.userAgent;
-  const isMobile =
-    /Android|iPhone|iPad|iPod/i.test(ua) &&
-    !/Macintosh; Intel Mac OS X/i.test(ua); // distingue iPadOS en desktop
+  document.getElementById("fechaActual").textContent =
+    new Date().toLocaleDateString("es-PE");
 
-  // --- Selector manual (opcional) ---
-  // Añade un selector simple para forzar el modo cuando quieras
-  (function addModeSelector(){
-    const wrap = document.querySelector('.container');
-    const bar = document.createElement('div');
-    bar.style.display = 'flex';
-    bar.style.justifyContent = 'flex-end';
-    bar.style.gap = '8px';
-    bar.style.marginBottom = '8px';
-
-    const label = document.createElement('label');
-    label.textContent = 'Modo de envío:';
-    label.style.fontSize = '12px';
-    label.style.color = '#666';
-
-    const sel = document.createElement('select');
-    sel.id = 'modoEnvio';
-    sel.style.fontSize = '12px';
-    ['Auto','Web WA','Mobile WA'].forEach(v=>{
-      const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);
-    });
-
-    bar.appendChild(label); bar.appendChild(sel);
-    wrap.insertBefore(bar, wrap.firstChild);
-  })();
-
-  // --- Icon sets ---
-  const iconsMobile = {
-    fecha: '📅',
-    info:  'ℹ️',
-    dec:   '📝',
-    tomar: '📌'
-  };
-  const iconsWeb = {
-    fecha: 'FECHA',
-    info:  'INFORMATIVO',
-    dec:   'DECISIÓN',
-    tomar: 'DECISIÓN A TOMAR'
-  };
-
-  function getMode(){
-    const forced = document.getElementById('modoEnvio')?.value || 'Auto';
-    if (forced === 'Web WA')   return 'web';
-    if (forced === 'Mobile WA')return 'mobile';
-    return isMobile ? 'mobile' : 'web';
-  }
-
-  function getIcons(){
-    return getMode()==='mobile' ? iconsMobile : iconsWeb;
-  }
-
-  // Pintar fecha en cabecera con el ícono/etiqueta correcto
-  function renderHeader(){
-    const mode = getMode();
-    const i = getIcons();
-    const fechaLbl = document.querySelector('p strong');
-    if (fechaLbl) fechaLbl.textContent = (mode==='mobile' ? `${i.fecha} FECHA:` : `${i.fecha}:`);
-  }
-
-  renderHeader();
-  document.getElementById('modoEnvio').addEventListener('change', renderHeader);
-
-  // Envío a WhatsApp (wa.me siempre, para que funcione en Safari y visores embebidos)
   document.getElementById("btnEnviar").addEventListener("click", function () {
     const numero = "51969596608";
     const fechaHora = new Date().toLocaleString("es-PE", { timeZone: "America/Lima" });
 
-    const informativo = document.getElementById("informativo").value.trim();
-    const decision = document.getElementById("decision").value.trim();
+    const informativo   = document.getElementById("informativo").value.trim();
+    const decision      = document.getElementById("decision").value.trim();
     const decisionTomar = document.getElementById("decisionTomar").value.trim();
 
-    const mode  = getMode();
-    const i     = getIcons();
-
-    let mensaje = mode==='mobile'
-      ? `${i.fecha} *Fecha y hora:* ${fechaHora}\n`
-      : `${i.fecha}: ${fechaHora}\n`;
-
+    // SOLO símbolos “BMP-safe”
+    let mensaje = `⏰ *Fecha y hora:* ${fechaHora}\n`;
     mensaje += "------------------------------\n";
-    if (informativo) mensaje += (mode==='mobile'
-      ? `${i.info} *Informativo:*\n${informativo}\n\n`
-      : `${i.info}:\n${informativo}\n\n`);
-    if (decision) mensaje += (mode==='mobile'
-      ? `${i.dec} *Decisión:*\n${decision}\n\n`
-      : `${i.dec}:\n${decision}\n\n`);
-    if (decisionTomar) mensaje += (mode==='mobile'
-      ? `${i.tomar} *Decisión a tomar:*\n${decisionTomar}\n\n`
-      : `${i.tomar}:\n${decisionTomar}\n\n`);
+    if (informativo)   mensaje += `ℹ️ *Informativo:*\n${informativo}\n\n`;
+    if (decision)      mensaje += `✍️ *Decisión:*\n${decision}\n\n`;
+    if (decisionTomar) mensaje += `➡️ *Decisión a tomar:*\n${decisionTomar}\n\n`;
 
     this.href = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
   });
 </script>
+</body>
+</html>
