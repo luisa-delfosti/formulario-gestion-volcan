@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Formulario de Gestión</title>
+<style>
+  :root{ --radius:15px; }
+  *{ box-sizing:border-box }
+  body{ margin:0; font-family: Arial, sans-serif; background:#f7f8fa; color:#333; }
+  .container{ max-width:900px; margin:0 auto; padding:20px 16px 96px; }
+  h1{ font-size:clamp(20px,2.6vw,28px); color:#444; margin:8px 0 6px }
+  h2{ display:flex; align-items:center; gap:10px; font-size:clamp(16px,2.2vw,20px); color:#444; margin:0 0 8px; }
+  .meta{margin:6px 2px 12px; font-size:14px}
+  .toolbar{ display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-bottom:8px; }
+  .toolbar .btn-sm{
+    font-size:12px; padding:8px 10px; border:1px solid #ddd; background:#fff; border-radius:10px; cursor:pointer;
+  }
+  .card{
+    background:#fff; border-radius:var(--radius); box-shadow:0 2px 10px rgba(0,0,0,.08);
+    padding:16px; margin-top:14px;
+  }
+  .row{ display:flex; gap:14px; flex-direction:column; }
+  textarea{
+    width:100%; border:1px solid #ddd; border-radius:10px; padding:10px;
+    resize:vertical; font-size:14px; min-height:100px;
+  }
+
+  .btn-wrap{
+    position:fixed; left:0; right:0; bottom:0; padding:12px 16px;
+    background:linear-gradient(180deg, rgba(247,248,250,0) 0%, #f7f8fa 30%);
+  }
+  .btn{
+    width:100%; background:#f5b700; color:#000; padding:14px 18px; border:none;
+    border-radius:12px; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:8px;
+    text-decoration:none;
+  }
+  .btn:hover{ background:#e0a900; }
+
+  /* Modal catálogo */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal{
+    width:100%; max-width:680px; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.2);
+    padding:16px;
+  }
+  .modal header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .modal h3{ margin:0; font-size:18px; color:#333;}
+  .modal .close{ border:none; background:#f0f0f0; border-radius:10px; padding:6px 10px; cursor:pointer; }
+  .table{ width:100%; border-collapse:collapse; font-size:14px; }
+  .table th, .table td{ padding:10px; border-bottom:1px solid #eee; text-align:left; }
+  .table th{ background:#fafafa; }
+  .copy{ font-size:12px; padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:8px; cursor:pointer; }
+  .note{ font-size:12px; color:#666; margin-top:8px; }
+
+  @media (min-width:900px){
+    .container{ padding-bottom: 32px; }
+    .btn-wrap{ position:static; background:transparent; padding:0; }
+    .row{ flex-direction:row; }
+    .row > .field{ flex:1; }
+    textarea{ min-height:160px; }
+    .actions{ display:flex; justify-content:flex-end; }
+    .btn{ width:auto; min-width:220px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="toolbar">
+      <button id="openCatalog" class="btn-sm">📚 Ver catálogo de iconos</button>
+    </div>
+
+    <h1><span id="icoHeaderDoc">📌</span> Formulario de Gestión</h1>
+    <p class="meta"><strong><span id="icoFechaHead">📅</span> FECHA:</strong> <span id="fechaActual"></span></p>
+
+    <div class="card">
+      <h2><span id="icoInfo">ℹ️</span> Informativo</h2>
+      <textarea id="informativo" placeholder="Describe la información relevante...">1.- 
+2.- 
+3.- </textarea>
+    </div>
+
+    <div class="card">
+      <h2><span id="icoDecision">📝</span> Decisión</h2>
+      <div class="row">
+        <div class="field">
+          <textarea id="decision" placeholder="Analiza los aspectos relevantes para la decisión..."></textarea>
+        </div>
+        <div class="field">
+          <textarea id="decisionTomar" placeholder="Especifica la decisión final..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-wrap actions">
+      <a id="btnEnviar" class="btn" target="_blank"><span id="icoSend">📤</span> Enviar</a>
+    </div>
+  </div>
+
+  <!-- Modal Catálogo -->
+  <div id="catalogBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header>
+        <h3 id="modalTitle">Catálogo de iconos seguros (WhatsApp Web & Mobile)</h3>
+        <button class="close" id="closeCatalog">Cerrar</button>
+      </header>
+      <div class="content">
+        <table class="table" id="iconsTable">
+          <thead>
+            <tr>
+              <th>Vista</th>
+              <th>Uso sugerido</th>
+              <th>Unicode</th>
+              <th>Copiar</th>
+            </tr>
+          </thead>
+          <tbody><!-- relleno por JS --></tbody>
+        </table>
+        <p class="note">Tip: haz clic en “Copiar” para usar el símbolo en títulos o mensajes. Este set prioriza compatibilidad amplia en navegadores y WhatsApp Web.</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ============ “Fuente” interna de iconos ============
+  const ICONS = {
+    headerDoc:  { char: '📌', name:'Marcador / General', unicode:'U+1F4CC' },
+    fecha:      { char: '📅', name:'Fecha',               unicode:'U+1F4C5' },
+    info:       { char: 'ℹ️', name:'Informativo',        unicode:'U+2139'  },
+    decision:   { char: '📝', name:'Decisión',           unicode:'U+1F4DD' },
+    tomar:      { char: '📌', name:'Decisión a tomar',   unicode:'U+1F4CC' },
+    send:       { char: '📤', name:'Enviar',             unicode:'U+1F4E4' },
+
+    // Extras útiles si luego quieres ampliarlo:
+    ok:         { char: '✅', name:'Aprobado',           unicode:'U+2705'  },
+    warn:       { char: '⚠️', name:'Alerta',             unicode:'U+26A0'  },
+    target:     { char: '🎯', name:'Objetivo',           unicode:'U+1F3AF' },
+    phone:      { char: '📞', name:'Contacto',           unicode:'U+1F4DE' },
+    doc:        { char: '📄', name:'Documento',          unicode:'U+1F4C4' }
+  };
+
+  // Pintar iconos en la UI desde la “fuente”
+  function applyIconsToUI(){
+    const byId = id => document.getElementById(id);
+    byId('icoHeaderDoc').textContent = ICONS.headerDoc.char;
+    byId('icoFechaHead').textContent = ICONS.fecha.char;
+    byId('icoInfo').textContent      = ICONS.info.char;
+    byId('icoDecision').textContent  = ICONS.decision.char;
+    byId('icoSend').textContent      = ICONS.send.char;
+  }
+
+  // Catálogo interno (modal) con copiar
+  function openCatalog(){ document.getElementById('catalogBackdrop').style.display = 'flex'; }
+  function closeCatalog(){ document.getElementById('catalogBackdrop').style.display = 'none'; }
+  function fillCatalog(){
+    const tbody = document.querySelector('#iconsTable tbody');
+    tbody.innerHTML = '';
+    const keysToShow = ['headerDoc','fecha','info','decision','tomar','send','ok','warn','target','phone','doc'];
+    keysToShow.forEach(k=>{
+      const it = ICONS[k];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-size:18px">${it.char}</td>
+        <td>${it.name}</td>
+        <td><code>${it.unicode}</code></td>
+        <td><button class="copy" data-char="${it.char}">Copiar</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll('.copy').forEach(btn=>{
+      btn.addEventListener('click', async (e)=>{
+        const val = e.currentTarget.getAttribute('data-char');
+        try{ await navigator.clipboard.writeText(val); e.currentTarget.textContent='¡Copiado!'; setTimeout(()=>e.currentTarget.textContent='Copiar',1200); }
+        catch{ alert('No se pudo copiar. Copia manual: ' + val); }
+      });
+    });
+  }
+
+  // Fecha de cabecera
+  document.getElementById("fechaActual").textContent =
+    new Date().toLocaleDateString("es-PE");
+
+  // Generar mensaje y redirigir a WhatsApp (wa.me para compatibilidad amplia)
+  document.getElementById("btnEnviar").addEventListener("click", function () {
+    const numero = "51969596608";
+    const fechaHora = new Date().toLocaleString("es-PE", { timeZone: "America/Lima" });
+
+    const informativo = document.getElementById("informativo").value.trim();
+    const decision = document.getElementById("decision").value.trim();
+    const decisionTomar = document.getElementById("decisionTomar").value.trim();
+
+    let mensaje = `${ICONS.fecha.char} *Fecha y hora:* ${fechaHora}\n`;
+    mensaje += "------------------------------\n";
+    if (informativo) mensaje += `${ICONS.info.char} *Informativo:*\n${informativo}\n\n`;
+    if (decision) mensaje += `${ICONS.decision.char} *Decisión:*\n${decision}\n\n`;
+    if (decisionTomar) mensaje += `${ICONS.tomar.char} *Decisión a tomar:*\n${decisionTomar}\n\n`;
+
+    this.href = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+  });
+
+  // Eventos de catálogo
+  document.getElementById('openCatalog').addEventListener('click', ()=>{ fillCatalog(); openCatalog(); });
+  document.getElementById('closeCatalog').addEventListener('click', closeCatalog);
+  document.getElementById('catalogBackdrop').addEventListener('click', (e)=>{ if(e.target.id==='catalogBackdrop') closeCatalog(); });
+
+  // Arranque
+  applyIconsToUI();
+</script>
+</body>
+</html>
